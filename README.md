@@ -19,14 +19,13 @@ At the moment, the game is a bit broken. This project will have you first fix th
 
 ## Instructions
 
-1. Form a team of two or three. You will all be working on the project **using only one computer**. This means that there shouldn't be more than 5-6 computers open during this project.
-2. Open the `index.html` file in your browser, and observe what goes on when you load it.
-3. After reading the instructions of the project, **take a look at the provided code**. Discuss it with your teammates. Don't worry if you don't understand *everything*, but try to get a general feel for what the code is doing.
-4. Notice that the code is using the HTML5 `<canvas>` element to draw the game on the screen. You can familiarize yourselves with the Canvas API *as needed* using the [MDN Canvas API Tutorial](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial).
-5. Once the provided code has been consulted, start with the basic section below and go through it at your own team's pace.
+1. Open the `index.html` file in your browser, and observe what goes on when you load it.
+2. After reading the instructions of the project, **take a look at the provided code**. Discuss it with your teammates. Don't worry if you don't understand *everything*, but try to get a general feel for what the code is doing.
+3. Notice that the code is using the HTML5 `<canvas>` element to draw the game on the screen. You can familiarize yourselves with the Canvas API *as needed* using the [MDN Canvas API Tutorial](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial).
+4. Once the provided code has been consulted, start with the basic section below and go through it at your own team's pace.
 
 ## IT'S PEANUT BUTTER DEMO TIME!!! :sparkles: :star: :star2:
-On **Friday April 7th at 5PM** we will stop coding for the project and do a demo to the whole class.
+On **Friday October 13 at 5PM** we will stop coding for the project and do a demo to the whole class.
 
 Each team will go in front of the class with their laptop and show the rest of the class what they built :)
 
