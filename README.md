@@ -57,12 +57,19 @@ Then, we'll make `Player` and `Enemy` extend the `Entity` class, and remove the 
 
 Having done this manipulation will break our constructors. Make sure to fix it by calling the appropriate function from your constructors.
 
+### 3.5. Figure out why changing the || or operator to an && and operator will make the game jump.
+
 ### 4. Flavor it!
 
 ---
 
 ## The sky is not the limit :sunglasses:
 Having completed the basic section of this project is already great! However, this should leave you plenty of time for the fun part: customizing and evolving the game. Since this is an open-ended activity, we will give you some suggestions. Feel free to use them or not.
+
+## what I'm doing: 
+* add animated coins which rotate and add 10000points to your score when you hit them.
+* add lasers like Mike's
+* the cats' exhaust and tail do not kill you //DONE
 
 * Instead of completely stopping the game when it's over, allow the player to start a new game
 * Add a sound track and sound effects to the game
