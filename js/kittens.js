@@ -281,7 +281,7 @@ class Engine {
     start() {
         this.player = new Player();
 
-        this.score = 124010;
+        this.score = 0;
         this.lives = 3;
         sounds["fireDarer.mp3"].currentTime = 0;
         sounds["fireDarer.mp3"].play();
