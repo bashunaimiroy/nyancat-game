@@ -31,7 +31,7 @@ var images = {};
 });
 
 
-
+//preload game Sounds
 var sounds = {};
 ['coin.mp3', 'fireDarer.mp3', 'gameOver.mp3', 'hit.mp3'].forEach(fileName => {
     var audio = document.createElement('audio');
@@ -270,6 +270,8 @@ class Engine {
 
             lane = Math.floor(Math.random() * lanes);
         }
+        //this makes a random number 0 to 1, creates an enemy if it's more than 0.2 and a coin otherwise.
+        //so there's a 1 in 5 possibility of generating a coin.
         var foo = Math.random();
         foo > 0.2 ?
             (this.catsAndCoins[lane] = new Enemy(lane * ENEMY_WIDTH)) :
@@ -385,9 +387,9 @@ class Engine {
 
             }
         });
+        // populates the lanes with coins and cats 
 
         this.setupThings();
-        // populates the lanes with coins and cats 
 
         // Check if player is dead
         if (this.isPlayerDead() || this.gameIsOver) {
