@@ -16,6 +16,7 @@ var PLAYER_HEIGHT = 54;
 // These two constants keep us from using "magic numbers" in our code
 var LEFT_ARROW_CODE = 37;
 var RIGHT_ARROW_CODE = 39;
+var R_ARROW_CODE = 82;
 
 // These two constants allow us to DRY
 var MOVE_LEFT = 'left';
@@ -23,11 +24,13 @@ var MOVE_RIGHT = 'right';
 
 // Preload game images
 var images = {};
-['enemy.png', 'stars.png', 'player.png', 'coin.png', "playerDead.png", "10000.png"].forEach(imgName => {
+['enemy.png', 'enemySkull.png', 'stars.png', 'player.png', 'coin.png', "playerDead.png", "10000.png", "ouch.png"].forEach(imgName => {
     var img = document.createElement('img');
     img.src = 'images/' + imgName;
     images[imgName] = img;
 });
+
+
 
 var sounds = {};
 ['coin.mp3', 'fireDarer.mp3', 'gameOver.mp3', 'hit.mp3'].forEach(fileName => {
@@ -68,14 +71,22 @@ class Entity {
         ctx.drawImage(this.sprite, this.x, this.y);
     }
 }
-class scoreFlash extends Entity {
-    constructor(xPos, yPos) {
+class popUp extends Entity {
+    constructor(xPos, yPos, type) {
         super();
         this.x = xPos;
         this.y = yPos;
-        this.sprite = images["10000.png"];
-        this.speed = 0.2;
+        this.sprite = images[`${type}.png`];
         this.duration = 0;
+    }
+
+}
+class scoreFlash extends popUp {
+    constructor(xPos, yPos, amount) {
+        super(xPos, yPos, amount);
+        this.speed = 0.2;
+        this.maxDuration = 10;
+
     }
     update(timeDiff) {
         this.duration++;
@@ -84,6 +95,20 @@ class scoreFlash extends Entity {
 
 
     }
+}
+class impactPopUp extends popUp {
+    constructor(xPos, yPos, type) {
+        super(xPos, yPos, type);
+        this.speed = 0.1;
+        this.maxDuration = 6;
+
+    }
+    update(timeDiff) {
+        this.duration++;
+        this.x += timeDiff * this.speed
+        this.y -= timeDiff * this.speed
+    }
+
 }
 class Coin extends Entity {
     constructor(xPos) {
@@ -123,15 +148,37 @@ class Enemy extends Entity {
         this.name = "Enemy";
         this.x = xPos;
         this.y = -ENEMY_HEIGHT;
-        this.sprite = images['enemy.png'];
+        this.frameIndex = 0;
+        this.tickCounter = 0;
         this.height = ENEMY_HEIGHT;
         // Each enemy should have a different speed
         this.speed = Math.random() / 2 + 0.25;
+        if (this.speed < 0.5) {
+            this.sprite = images['enemy.png'];
+        } else {
+            this.sprite = images['enemySkull.png']
+        }
+
+        this.ticksPerFrame = 5 / (this.speed * 1.5);
+    }
+
+    render(ctx) {
+        ctx.drawImage(this.sprite, this.frameIndex * 75, 0, 75, 156, this.x, this.y, 75, 156)
     }
 
     update(timeDiff) {
         this.y = this.y + timeDiff * this.speed;
+        this.tickCounter += 1;
+        if (this.tickCounter > this.ticksPerFrame) {
+            this.tickCounter = 0;
+
+            this.frameIndex += 1;
+            if (this.frameIndex > 3) {
+                this.frameIndex = 0;
+            }
+        }
     }
+
 }
 
 class Player extends Entity {
@@ -167,9 +214,8 @@ The engine will try to draw your game at 60 frames per second using the requestA
 class Engine {
     constructor(element) {
         // Setup the player
-        this.player = new Player();
 
-        // Setup catsAndCoins and alerts, making sure there are always four
+        // Setup catsAndCoins and popUps, making sure there are always four
         this.setupThings();
 
         // Setup the <canvas> element where we will be drawing
@@ -177,8 +223,18 @@ class Engine {
         canvas.width = GAME_WIDTH;
         canvas.height = GAME_HEIGHT;
         element.appendChild(canvas);
-
+        document.addEventListener('keydown', e => {
+            if (e.keyCode === LEFT_ARROW_CODE) {
+                this.player.move(MOVE_LEFT);
+            } else if (e.keyCode === RIGHT_ARROW_CODE) {
+                this.player.move(MOVE_RIGHT);
+            } else if (e.keyCode === R_ARROW_CODE) {
+                this.gameIsOver = true;
+                //this is a debug button to test the gameover screen quickly
+            }
+        })
         this.ctx = canvas.getContext('2d');
+        var gameIsOver = false;
 
         // Since gameLoop will be called out of context, bind it once here.
         this.gameLoop = this.gameLoop.bind(this);
@@ -187,14 +243,14 @@ class Engine {
     /*
      The game allows for 5 horizontal slots where a cat or coin can be present.
      At any point in time there can be at most ${MAX} things 
-     This sets up the catsAndCoins array, as well as the alerts array.*/
+     This sets up the catsAndCoins array, as well as the popUps array.*/
 
     setupThings() {
         if (!this.catsAndCoins) {
             this.catsAndCoins = [];
         }
-        if (!this.alerts) {
-            this.alerts = [];
+        if (!this.popUps) {
+            this.popUps = [];
         }
 
         while (this.catsAndCoins.filter(e => !!e).length < MAX_catsAndCoins) {
@@ -223,23 +279,70 @@ class Engine {
     }
     // This method kicks off the game
     start() {
-        this.score = 0;
+        this.player = new Player();
+
+        this.score = 124010;
         this.lives = 3;
+        sounds["fireDarer.mp3"].currentTime = 0;
         sounds["fireDarer.mp3"].play();
         this.lastFrame = Date.now();
-
         // Listen for keyboard left/right and update the player
-        document.addEventListener('keydown', e => {
-            if (e.keyCode === LEFT_ARROW_CODE) {
-                this.player.move(MOVE_LEFT);
-            } else if (e.keyCode === RIGHT_ARROW_CODE) {
-                this.player.move(MOVE_RIGHT);
-            }
-        });
+
 
         this.gameLoop();
     }
+    gameOver() {
+        // If they are dead, then it's game over!
+        //clears screen, redraws background, redraws everything else at lower alpha, pauses music
+        this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT)
+        this.ctx.globalAlpha = 0.8
 
+        this.ctx.drawImage(images['stars.png'], 0, 0); // draw the star bg
+
+        this.ctx.globalAlpha = 0.5
+        this.catsAndCoins.forEach(thing => thing.render(this.ctx)); // draw the catsAndCoins          
+        this.player.sprite = images["playerDead.png"]
+        this.player.render(this.ctx)
+        sounds["fireDarer.mp3"].pause();
+
+
+        //after a timeout, shows the Game Over text at full alpha 
+        //,plays Game Over song and shows restart button
+        this.ctx.globalAlpha = 1.0
+
+        this.ctx.font = 'bold 40px Impact';
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.textAlign = "center";
+        setTimeout(() => {
+            this.ctx.fillText(this.score + " GAME OVER", GAME_WIDTH / 2, GAME_HEIGHT / 2);
+            sounds["gameOver.mp3"].play();
+            setTimeout(() => {
+                //makes the restart button visible
+                document.getElementById('restartButton').style.display = "inline-block";
+            }, 1500)
+        }, 1000)
+
+        console.log(restartButton)
+    }
+
+    restart() {
+        //turns off my quick-gameover debug button's variable
+        this.gameIsOver = false;
+        console.log("player restarted!")
+        //hides the button
+        document.getElementById('restartButton').style.display = "none";
+        //empties all the entity arrays
+        // [this.catsAndCoins, this.popUps].forEach (
+        //     (entityArray) => {entityArray=[];}
+        // )
+        this.catsAndCoins = [];
+        this.popUps = [];
+        //clears the screen
+        // this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT)
+
+        this.start();
+
+    }
     /*
     This is the core of the game engine. The `gameLoop` function gets called ~60 times per second
     During each execution of the function, we will update the positions of all game entities
@@ -258,14 +361,14 @@ class Engine {
         // Increase the score!
         this.score += timeDiff;
 
-        // Call update on all catsAndCoins and alerts
+        // Call update on all catsAndCoins and popUps
         this.catsAndCoins.forEach(thing => thing.update(timeDiff, 10));
-        this.alerts.forEach(thing => thing.update(timeDiff, 10));
+        this.popUps.forEach(thing => thing.update(timeDiff, 10));
 
         // Draw everything!
         this.ctx.drawImage(images['stars.png'], 0, 0); // draw the star bg
         this.catsAndCoins.forEach(thing => thing.render(this.ctx)); // draw the catsAndCoins
-        this.alerts.forEach(thing => thing.render(this.ctx)); // draw the alerts
+        this.popUps.forEach(thing => thing.render(this.ctx)); // draw the popUps
         this.player.render(this.ctx); // draw the player
 
         // Check if any catsAndCoins should be erased
@@ -275,9 +378,10 @@ class Engine {
 
             }
         });
-        this.alerts.forEach((thing, thingIdx) => {
-            if (thing.duration > 10) {
-                delete this.alerts[thingIdx];
+        //check if any popups should be destroyed
+        this.popUps.forEach((thing, thingIdx) => {
+            if (thing.duration > thing.maxDuration) {
+                delete this.popUps[thingIdx];
 
             }
         });
@@ -286,27 +390,15 @@ class Engine {
         // populates the lanes with coins and cats 
 
         // Check if player is dead
-        if (this.isPlayerDead()) {
-            // If they are dead, then it's game over!
-            this.player.sprite = images["playerDead.png"]
-            this.player.render(this.ctx)
-            this.ctx.font = 'bold 40px Impact';
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.textAlign = "center";
-
-            sounds["fireDarer.mp3"].pause();
-            setTimeout(() => {
-
-                this.ctx.fillText(this.score + "GAME OVER", GAME_WIDTH / 2, GAME_HEIGHT / 2);
-                sounds["gameOver.mp3"].play();
-            }, 1000)
-
+        if (this.isPlayerDead() || this.gameIsOver) {
+            this.gameOver();
         } else {
             // If player is not dead, then draw the score
             this.ctx.font = 'bold 30px Impact';
             this.ctx.fillStyle = '#ffffff';
+            this.ctx.textAlign = "start";
             this.ctx.fillText(this.score, 5, 30);
-            this.ctx.fillText(this.lives, 350, 30);
+            this.ctx.fillText("lives: " + this.lives, 275, 30);
 
             // Set the time marker and redraw
             this.lastFrame = Date.now();
@@ -317,29 +409,35 @@ class Engine {
     isPlayerDead() {
         return this.catsAndCoins.some(
             (thing, thingIdx) => {
+                //if some thing hit the player
                 if (
                     thing.x === this.player.x &&
                     thing.y + thing.height >= this.player.y &&
-                    thing.y + thing.height / 2 <= this.player.y + this.player.height
+                    thing.y + thing.height - 25 <= this.player.y + this.player.height
                 ) {
 
-
+                    //if it's an enemy
                     if (thing.name === "Enemy") {
-                        console.log("it's a hit")
+                        console.log("an enemy hit the player")
+                        // sounds["hit.mp3"].pause();
+                        sounds["hit.mp3"].currentTime = 0;
                         sounds["hit.mp3"].play();
                         if (this.lives > 0) {
                             delete this.catsAndCoins[thingIdx]
+                            this.popUps[thingIdx] = new impactPopUp(thing.x, thing.y + ENEMY_HEIGHT - 50, "ouch")
                             this.lives--;
                         } else {
                             return true;
                         }
+                        //if it's a coin
                     } else if (thing.name === "Coin") {
-                        console.log("it's a coin")
+                        console.log("a coin hit the player")
                         this.score += 10000
+                        sounds["coin.mp3"].currentTime = 0;
                         sounds["coin.mp3"].play();
 
                         delete this.catsAndCoins[thingIdx]
-                        this.alerts[thingIdx] = new scoreFlash(thing.x, thing.y)
+                        this.popUps[thingIdx] = new scoreFlash(thing.x, thing.y, "10000")
 
                     }
 
