@@ -398,7 +398,7 @@ class Engine {
             this.ctx.fillStyle = '#ffffff';
             this.ctx.textAlign = "start";
             this.ctx.fillText(this.score, 5, 30);
-            this.ctx.fillText("lives: " + this.lives, 275, 30);
+            this.ctx.fillText("Lives: " + this.lives, 275, 30);
 
             // Set the time marker and redraw
             this.lastFrame = Date.now();
