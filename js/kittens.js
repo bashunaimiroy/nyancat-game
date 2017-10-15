@@ -72,6 +72,28 @@ class Entity {
         ctx.drawImage(this.sprite, this.x, this.y);
     }
 }
+class Background {
+    constructor(imageFile){
+    this.image = images[`${imageFile}.png`];
+    this.frameIndex = 0;
+    }
+
+    render(ctx) {
+        ctx.drawImage(this.image, 0,
+            GAME_HEIGHT - this.frameIndex, GAME_WIDTH,
+            GAME_HEIGHT, 0, 0, GAME_WIDTH, GAME_HEIGHT)
+    }
+    update(timeDiff){
+            this.frameIndex += timeDiff
+            if(this.frameIndex>=500){
+                this.frameIndex=0
+            }
+    
+        }
+    }
+
+
+
 class popUp extends Entity {
     constructor(xPos, yPos, type) {
         super();
@@ -220,7 +242,8 @@ class Engine {
         // Setup catsAndCoins and popUps, making sure there are always four
         this.setupThings();
         //setup some variables we'll be using for gameover, pause and level functions
-        this.currentLevel = 6;
+        this.currentLevel = 1;
+        this.enemiesInLevel = 40;
         this.gameIsOver = false;
         this.gameIsPaused = false;
         // Setup the <canvas> element where we will be drawing
@@ -250,10 +273,20 @@ class Engine {
                 console.log("player pressed Q!")
                 this.levelSkip = true;
             }
+            //this next block is a keypress to start the game from the starting screen,
+            // which isn't working currently.
 
-        }) //currentLevel should start at 1, change this
+            // else if (e.keyCode === 70){
+            //     console.log("player pressed F")
+            //     if (this.gameIsStarting === true){
+            //         this.gameIsStarting = false;
+            //         this.startScreen();
+            //     }
+            // }
+
+        })
         this.ctx = canvas.getContext('2d');
-        
+
         // Since gameLoop will be called out of context, bind it once here.
         this.gameLoop = this.gameLoop.bind(this);
     }
@@ -297,13 +330,36 @@ class Engine {
 
 
     }
-    // This method kicks off the game
+    // This is the opening screen. It does not work, I'll figure it out
+    startScreen() {
+        console.log("yep we're starting!")
+        this.gameIsStarting = true;
+        this.ctx.drawImage(images['stars.png'], 0, 0); 
+        // draw the star bg
+        console.log("just drew the background! oowee!")
+
+        // and keep the animation going
+        // this.ctx.globalAlpha = 1.0
+
+        // this.ctx.fillText(`Welcome to`, GAME_WIDTH / 2, GAME_HEIGHT / 2);
+        // this.ctx.fillText(`BashNyanGame`, GAME_WIDTH / 2, GAME_HEIGHT / 2 +45);
+        // this.ctx.font = 'bold 25px Impact';        
+        // this.ctx.fillText(`Press F to start`, GAME_WIDTH / 2, GAME_HEIGHT / 2 +90);
+
+
+
+
+    }
+
     start() {
         this.gameIsOver = false;
         this.gameIsPaused = false;
+        this.background = new Background("stars");
         this.player = new Player();
         this.score = 0;
         this.enemiesPassed = 0;
+        //this commented out line causes everything to wig out and devtools
+        // says an element in DOM asked to play and pause at the same time. why.
         // this.enemiesInLevel = 0;
         this.lives = 3;
         this.startMusic();
@@ -339,11 +395,11 @@ class Engine {
         sounds["levelEnd.mp3"].play();
         if (this.currentLevel === 6) {
             this.ctx.font = '20px Impact';
-            
+
             this.ctx.fillText(`You have played all available levels!`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 90);
             this.ctx.fillText(`Thank you for playing.`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 135);
             this.ctx.font = '30px Impact';
-            
+
             this.ctx.fillText(`Check out our Kickstarter!`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180);
 
         } else
@@ -504,9 +560,11 @@ class Engine {
         // Call update on all catsAndCoins and popUps, using timeDiff
         this.catsAndCoins.forEach(thing => thing.update(timeDiff));
         this.popUps.forEach(thing => thing.update(timeDiff));
-
+        this.background.update(timeDiff);
         // Draw everything!
-        this.ctx.drawImage(images['stars.png'], 0, 0); // draw the star bg
+
+        // this.ctx.drawImage(images['stars.png'], 0, 0); // draw the star bg
+        this.background.render(this.ctx);
         this.catsAndCoins.forEach(thing => thing.render(this.ctx)); // draw the catsAndCoins
         this.popUps.forEach(thing => thing.render(this.ctx)); // draw the popUps
         this.player.render(this.ctx); // draw the player
@@ -557,13 +615,13 @@ class Engine {
     }
 
     isLevelOver() {
-        //checks if the player has passed 40 enemies in this level
+        //checks if the player has passed the limit for enemies in this level
         //if true, the level is over.
         if (this.levelSkip === true) {
             this.levelSkip = false;
             return true;
         }
-        return this.enemiesPassed === this.enemiesInLevel;
+        return this.enemiesPassed >= this.enemiesInLevel;
     }
 
     isPlayerDead() {
