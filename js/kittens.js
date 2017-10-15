@@ -8,15 +8,16 @@ var MAX_COINS = 2;
 
 var ENEMY_WIDTH = 75;
 var ENEMY_HEIGHT = 156;
-var MAX_catsAndCoins = 4;
-
+var MAX_catsAndCoins = 3;
+var catSpeedDivider = 4;
 var PLAYER_WIDTH = 75;
 var PLAYER_HEIGHT = 54;
 
 // These two constants keep us from using "magic numbers" in our code
 var LEFT_ARROW_CODE = 37;
 var RIGHT_ARROW_CODE = 39;
-var R_ARROW_CODE = 82;
+var R_KEY_CODE = 82;
+var P_KEY_CODE = 80;
 
 // These two constants allow us to DRY
 var MOVE_LEFT = 'left';
@@ -33,7 +34,7 @@ var images = {};
 
 //preload game Sounds
 var sounds = {};
-['coin.mp3', 'fireDarer.mp3', 'gameOver.mp3', 'hit.mp3'].forEach(fileName => {
+['coin.mp3', 'level1.mp3', 'level2.mp3', 'level3.mp3', 'levelEnd.mp3', 'gameOver.mp3', 'hit.mp3'].forEach(fileName => {
     var audio = document.createElement('audio');
     audio.src = `sounds/${fileName}`;
     //  audio.setAttribute("preload", "auto");
@@ -120,6 +121,7 @@ class Coin extends Entity {
         this.sprite = images['coin.png']
         this.frameIndex = 0;
         this.tickCounter = 0;
+        this.ticksPerFrame = 10
         this.speed = 0.5;
     }
     render(ctx) {
@@ -129,7 +131,7 @@ class Coin extends Entity {
     update(timeDiff, frameRate) {
         this.y = this.y + timeDiff * this.speed;
         this.tickCounter += 1;
-        if (this.tickCounter > frameRate) {
+        if (this.tickCounter > this.ticksPerFrame) {
             this.tickCounter = 0;
 
             this.frameIndex += 1;
@@ -152,7 +154,7 @@ class Enemy extends Entity {
         this.tickCounter = 0;
         this.height = ENEMY_HEIGHT;
         // Each enemy should have a different speed
-        this.speed = Math.random() / 2 + 0.25;
+        this.speed = Math.random() / catSpeedDivider + 0.25;
         if (this.speed < 0.5) {
             this.sprite = images['enemy.png'];
         } else {
@@ -217,8 +219,12 @@ class Engine {
 
         // Setup catsAndCoins and popUps, making sure there are always four
         this.setupThings();
-
+        //setup some variables we'll be using for gameover, pause and level functions
+        this.currentLevel = 6;
+        this.gameIsOver = false;
+        this.gameIsPaused = false;
         // Setup the <canvas> element where we will be drawing
+
         var canvas = document.createElement('canvas');
         canvas.width = GAME_WIDTH;
         canvas.height = GAME_HEIGHT;
@@ -228,14 +234,26 @@ class Engine {
                 this.player.move(MOVE_LEFT);
             } else if (e.keyCode === RIGHT_ARROW_CODE) {
                 this.player.move(MOVE_RIGHT);
-            } else if (e.keyCode === R_ARROW_CODE) {
+            } else if (e.keyCode === R_KEY_CODE) {
                 this.gameIsOver = true;
                 //this is a debug button to test the gameover screen quickly
-            }
-        })
-        this.ctx = canvas.getContext('2d');
-        var gameIsOver = false;
+            } else if (e.keyCode === 80) {
+                console.log("player pressed P!")
+                if (!this.gameIsPaused) {
+                    this.gameIsPaused = true;
+                } else if (this.gameIsPaused) {
+                    this.gameIsPaused = false;
+                    this.resumeGame();
+                }
 
+            } else if (e.keyCode === 81) {
+                console.log("player pressed Q!")
+                this.levelSkip = true;
+            }
+
+        }) //currentLevel should start at 1, change this
+        this.ctx = canvas.getContext('2d');
+        
         // Since gameLoop will be called out of context, bind it once here.
         this.gameLoop = this.gameLoop.bind(this);
     }
@@ -281,17 +299,139 @@ class Engine {
     }
     // This method kicks off the game
     start() {
+        this.gameIsOver = false;
+        this.gameIsPaused = false;
         this.player = new Player();
-
         this.score = 0;
+        this.enemiesPassed = 0;
+        // this.enemiesInLevel = 0;
         this.lives = 3;
-        sounds["fireDarer.mp3"].currentTime = 0;
-        sounds["fireDarer.mp3"].play();
+        this.startMusic();
         this.lastFrame = Date.now();
         // Listen for keyboard left/right and update the player
 
 
         this.gameLoop();
+    }
+
+    levelEnd() {
+
+        this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT)
+        this.ctx.globalAlpha = 0.9
+
+        this.ctx.drawImage(images['stars.png'], 0, 0); // draw the star bg
+
+        this.ctx.globalAlpha = 0.5
+        this.catsAndCoins.forEach(thing => thing.render(this.ctx)); // draw the catsAndCoins          
+        this.player.render(this.ctx)
+
+        //sets alpha and text properties for score display
+        this.ctx.globalAlpha = 1.0
+        this.ctx.font = 'bold 40px Impact';
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.textAlign = "center";
+        //after a timeout, displays score and plays levelEnd music
+        this.ctx.fillText(`Level ${this.currentLevel} Complete!`, GAME_WIDTH / 2, GAME_HEIGHT / 2);
+        this.ctx.fillText(this.score, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 45);
+        this.pauseMusic();
+        sounds["levelEnd.mp3"].currentTime = 0;
+
+        sounds["levelEnd.mp3"].play();
+        if (this.currentLevel === 6) {
+            this.ctx.font = '20px Impact';
+            
+            this.ctx.fillText(`You have played all available levels!`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 90);
+            this.ctx.fillText(`Thank you for playing.`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 135);
+            this.ctx.font = '30px Impact';
+            
+            this.ctx.fillText(`Check out our Kickstarter!`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180);
+
+        } else
+            setTimeout(() => {
+                //makes the nextLevel button visible
+                document.getElementById('nextLevelButton').style.display = "inline-block";
+            }, 1500)
+
+    }
+
+    pauseGame() {
+        console.log("running pauseGame function")
+        this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT)
+
+        this.ctx.globalAlpha = 0.8
+
+        this.ctx.drawImage(images['stars.png'], 0, 0); // draw the star bg
+        //draw everything in place
+        this.ctx.globalAlpha = 0.5
+        this.catsAndCoins.forEach(thing => thing.render(this.ctx));
+        this.player.render(this.ctx)
+        //pause music
+        this.pauseMusic();
+        //sets alpha and text properties for score display
+        this.ctx.globalAlpha = 1.0
+        this.ctx.font = 'bold 40px Impact';
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.textAlign = "center";
+        this.ctx.fillText(`Level ${this.currentLevel} PAUSED`, GAME_WIDTH / 2, GAME_HEIGHT / 2);
+        this.ctx.fillText(this.score, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 45);
+
+
+    }
+
+    resumeGame() {
+        console.log("running resumeGame function")
+        this.resumeMusic();
+        this.currentFrame = Date.now();
+        this.lastFrame = Date.now();
+        this.gameLoop();
+    }
+
+
+
+    //these functions pause and play the music, no arguments,
+    //just detect the current level and play level1.mp3 if it's 1 or 2,
+    //level2.mp3 if it's 3 or 4, etc.
+    //I could put all of these in an object to reuse the var across them.
+    pauseMusic() {
+        var musicLevel = Math.floor((this.currentLevel + 1) / 2)
+        sounds[`level${musicLevel}.mp3`].pause();
+    }
+    resumeMusic() {
+        var musicLevel = Math.floor((this.currentLevel + 1) / 2)
+        sounds[`level${musicLevel}.mp3`].play();
+    }
+    startMusic() {
+        var musicLevel = Math.floor((this.currentLevel + 1) / 2)
+        sounds[`level${musicLevel}.mp3`].currentTime = 0;
+        sounds[`level${musicLevel}.mp3`].play();
+    }
+
+    nextLevel() {
+        //turns off my "press r to gameOver" debug button's variable
+        this.gameIsOver = false;
+        sounds["levelEnd.mp3"].pause();
+        this.currentLevel += 1
+        //on levels 4 and 5, the maximum enemies/coins is increased by 1
+
+        //there was a typo on the next line - "currentLevel<=4"
+        //that caused my chrome Tab to seize up entirely. Note to self:
+        //ask TA about why that might happen and how to avoid it
+
+        if (5 >= this.currentLevel && this.currentLevel >= 4) {
+            MAX_catsAndCoins += 1
+        }
+        //on levels 2 and 3, the speed divider reduces by 1(meaning cats can go faster)
+        if (3 >= this.currentLevel && this.currentLevel >= 2) {
+            catSpeedDivider -= 1
+        }
+        this.enemiesInLevel = this.currentLevel * 20 + 20;
+        console.log("next level starting!")
+        //hides the button
+        document.getElementById('nextLevelButton').style.display = "none";
+        this.catsAndCoins = [];
+        this.popUps = [];
+        //starts 
+        this.start();
     }
     gameOver() {
         // If they are dead, then it's game over!
@@ -305,8 +445,7 @@ class Engine {
         this.catsAndCoins.forEach(thing => thing.render(this.ctx)); // draw the catsAndCoins          
         this.player.sprite = images["playerDead.png"]
         this.player.render(this.ctx)
-        sounds["fireDarer.mp3"].pause();
-
+        this.pauseMusic();
 
         //after a timeout, shows the Game Over text at full alpha 
         //,plays Game Over song and shows restart button
@@ -324,12 +463,11 @@ class Engine {
             }, 1500)
         }, 1000)
 
-        console.log(restartButton)
+        console.log("game over!")
     }
 
     restart() {
         //turns off my quick-gameover debug button's variable
-        this.gameIsOver = false;
         console.log("player restarted!")
         //hides the button
         document.getElementById('restartButton').style.display = "none";
@@ -339,9 +477,9 @@ class Engine {
         // )
         this.catsAndCoins = [];
         this.popUps = [];
-        //clears the screen
-        // this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT)
-
+        this.currentLevel = 1;
+        MAX_catsAndCoins = 3;
+        catSpeedDivider = 4;
         this.start();
 
     }
@@ -356,16 +494,16 @@ class Engine {
     You should use this parameter to scale your update appropriately
      */
     gameLoop() {
-        // Check how long it's been since last frame
-        var currentFrame = Date.now();
-        var timeDiff = currentFrame - this.lastFrame;
+        // Check how long it's been since last frame, call that number timeDiff
+        this.currentFrame = Date.now();
+        var timeDiff = this.currentFrame - this.lastFrame;
 
-        // Increase the score!
+        // Increase the score by timeDiff
         this.score += timeDiff;
 
-        // Call update on all catsAndCoins and popUps
-        this.catsAndCoins.forEach(thing => thing.update(timeDiff, 10));
-        this.popUps.forEach(thing => thing.update(timeDiff, 10));
+        // Call update on all catsAndCoins and popUps, using timeDiff
+        this.catsAndCoins.forEach(thing => thing.update(timeDiff));
+        this.popUps.forEach(thing => thing.update(timeDiff));
 
         // Draw everything!
         this.ctx.drawImage(images['stars.png'], 0, 0); // draw the star bg
@@ -377,6 +515,7 @@ class Engine {
         this.catsAndCoins.forEach((thing, thingIdx) => {
             if (thing.y > GAME_HEIGHT) {
                 delete this.catsAndCoins[thingIdx];
+                this.enemiesPassed += 1
 
             }
         });
@@ -394,18 +533,37 @@ class Engine {
         // Check if player is dead
         if (this.isPlayerDead() || this.gameIsOver) {
             this.gameOver();
+        } else if (this.gameIsPaused) {
+            console.log("gameLoop saw that gameIsPaused = true")
+            this.pauseGame();
+        }
+        // Check if level is over
+        else if (this.isLevelOver()) {
+            this.levelEnd();
         } else {
-            // If player is not dead, then draw the score
+            // If everything's good, then draw the score
             this.ctx.font = 'bold 30px Impact';
             this.ctx.fillStyle = '#ffffff';
             this.ctx.textAlign = "start";
             this.ctx.fillText(this.score, 5, 30);
             this.ctx.fillText("Lives: " + this.lives, 275, 30);
-
-            // Set the time marker and redraw
+            this.ctx.textAlign = "center"
+            this.ctx.fillText(`Level ${this.currentLevel}`, GAME_WIDTH / 2, 30);
+            this.ctx.fillText(`${this.enemiesPassed} / ${this.enemiesInLevel}`, GAME_WIDTH - 60, GAME_HEIGHT - 30)
+            // and keep the animation going
             this.lastFrame = Date.now();
             requestAnimationFrame(this.gameLoop);
         }
+    }
+
+    isLevelOver() {
+        //checks if the player has passed 40 enemies in this level
+        //if true, the level is over.
+        if (this.levelSkip === true) {
+            this.levelSkip = false;
+            return true;
+        }
+        return this.enemiesPassed === this.enemiesInLevel;
     }
 
     isPlayerDead() {
