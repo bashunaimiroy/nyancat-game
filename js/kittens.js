@@ -263,6 +263,11 @@ class Engine {
             //playerxpos is the center of the hamburger
             var playerXpos = this.player.x + PLAYER_WIDTH / 2
             //if the touch is left of playerXpos, move left. If right, move right.
+            if(this.gameIsStarting){
+                this.gameIsStarting=false;
+                this.start();
+            }
+            else{
             if (playerXpos > touch.pageX) {
                 this.player.move(MOVE_LEFT);
             } else if (playerXpos < touch.pageX) {
@@ -270,7 +275,7 @@ class Engine {
 
             }
             //just logs the touch x y coordinates. you can delete this.
-            console.log(`touched at ${touch.pageX},${touch.pageY}`);
+            console.log(`touched at ${touch.pageX},${touch.pageY}`);}
         })
         //starts listening for key presses from the user's keyboard
         document.addEventListener('keydown', e => {
@@ -348,6 +353,8 @@ class Engine {
         this.ctx.fillText(`BashNyanGame`, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 5);
         this.ctx.font = 'bold 25px Impact';
         this.ctx.fillText(`Press F to start`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40);
+        this.ctx.fillText(`or tap screen`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 68);
+        
         // }
 
         /*        
@@ -358,7 +365,6 @@ class Engine {
     }
 
     start() {
-        //both of these should be false
         this.ctx.fillStyle = '#ffffff';
         this.gameIsOver = false;
         this.gameIsPaused = false;
@@ -366,10 +372,7 @@ class Engine {
         this.player = new Player();
         this.score = 0;
         this.enemiesPassed = 0;
-        //this commented out line causes everything to wig out and devtools
-        // says an element in DOM asked to play and pause at the same time. why.
-        // this.enemiesInLevel = 10;
-        this.lives = 3;
+         this.lives = 3;
         this.startMusic();
         this.lastFrame = Date.now();
         // Listen for keyboard left/right and update the player
