@@ -296,20 +296,23 @@ class Engine {
             }
             //this next block is a keypress to start the game from the starting screen,
             // which isn't working currently.
-
-            // else if (e.keyCode === 70){
-            //     console.log("player pressed F")
-            //     if (this.gameIsStarting === true){
-            //         this.gameIsStarting = false;
-            //         this.startScreen();
-            //     }
-            // }
+            else if (e.keyCode === 70) {
+                console.log("player pressed F")
+                if (this.gameIsStarting === true) {
+                    this.gameIsStarting = false;
+                    this.start();
+                } else {
+                    this.nextLevel();
+                }
+            }
 
         });
         this.ctx = canvas.getContext('2d');
 
         // Since gameLoop will be called out of context, bind it once here.
         this.gameLoop = this.gameLoop.bind(this);
+        this.pauseGame = this.pauseGame.bind(this);
+        this.startScreen = this.startScreen.bind(this);
     }
     //this gets called whenever someone touches the screen,
     //it compares the player X position and the touch's X position
@@ -328,28 +331,34 @@ class Engine {
     }
     // This is the opening screen. It does not work, I'll figure it out
     startScreen() {
+        this.gameIsStarting = true;
+
         console.log("yep we're starting!")
-        // this.gameIsStarting = true;
-        this.ctx.fillStyle = "bold 40px impact"
-        this.ctx.fillText = "HEY HEY HEY"
-        // this.ctx.drawImage(images['stars.png'], 0, 0); 
         // draw the star bg
+        // images['stars.png'].onload = () => {
+        this.ctx.drawImage(images['stars.png'], 0, 0)
+
+        this.ctx.fillStyle = "#FFFFFF"
+        this.ctx.font = "bold 40px Impact"
         console.log("just drew the background! oowee!")
+        this.ctx.globalAlpha = 1.0
+        this.ctx.textAlign = "center"
+        this.ctx.fillText(`Welcome to`, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50);
+        this.ctx.fillText(`BashNyanGame`, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 5);
+        this.ctx.font = 'bold 25px Impact';
+        this.ctx.fillText(`Press F to start`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40);
+        // }
 
-        // and keep the animation going
-        // this.ctx.globalAlpha = 1.0
+        /*        
+        1. this won't work unless images['stars.png'] is already loaded. 
 
-        // this.ctx.fillText(`Welcome to`, GAME_WIDTH / 2, GAME_HEIGHT / 2);
-        // this.ctx.fillText(`BashNyanGame`, GAME_WIDTH / 2, GAME_HEIGHT / 2 +45);
-        // this.ctx.font = 'bold 25px Impact';        
-        // this.ctx.fillText(`Press F to start`, GAME_WIDTH / 2, GAME_HEIGHT / 2 +90);
-
-
-
+                */
 
     }
 
     start() {
+        //both of these should be false
+        this.ctx.fillStyle = '#ffffff';
         this.gameIsOver = false;
         this.gameIsPaused = false;
         this.background = new Background("stars");
@@ -358,14 +367,13 @@ class Engine {
         this.enemiesPassed = 0;
         //this commented out line causes everything to wig out and devtools
         // says an element in DOM asked to play and pause at the same time. why.
-        // this.enemiesInLevel = 0;
+        // this.enemiesInLevel = 10;
         this.lives = 3;
         this.startMusic();
         this.lastFrame = Date.now();
         // Listen for keyboard left/right and update the player
-
-
         this.gameLoop();
+
     }
 
     levelEnd() {
@@ -387,6 +395,8 @@ class Engine {
         //after a timeout, displays score and plays levelEnd music
         this.ctx.fillText(`Level ${this.currentLevel} Complete!`, GAME_WIDTH / 2, GAME_HEIGHT / 2);
         this.ctx.fillText(this.score, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 45);
+        this.ctx.font = 'bold 20px Impact';
+
         this.pauseMusic();
         sounds["levelEnd.mp3"].currentTime = 0;
 
@@ -403,9 +413,11 @@ class Engine {
 
         } else
             setTimeout(() => {
+                this.ctx.fillText("Press F to continue", GAME_WIDTH / 2, GAME_HEIGHT / 2 + 115);
                 //makes the nextLevel button visible
                 document.getElementById('nextLevelButton').style.display = "inline-block";
-            }, 1500)
+            }, 500)
+
 
     }
 
@@ -429,7 +441,6 @@ class Engine {
         this.ctx.textAlign = "center";
         this.ctx.fillText(`Level ${this.currentLevel} PAUSED`, GAME_WIDTH / 2, GAME_HEIGHT / 2);
         this.ctx.fillText(this.score, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 45);
-
 
     }
 
@@ -634,6 +645,8 @@ class Engine {
         } else if (this.gameIsPaused) {
             console.log("gameLoop saw that gameIsPaused = true")
             this.pauseGame();
+        } else if (this.gameIsStarting) {
+            this.startScreen();
         }
         // Check if level is over
         else if (this.isLevelOver()) {
@@ -713,4 +726,7 @@ class Engine {
 
 // This section will start the game
 var gameEngine = new Engine(document.getElementById('app'));
-gameEngine.start();
+window.onload = () => {
+    console.log("window has loaded");
+    gameEngine.startScreen();
+}
