@@ -243,7 +243,8 @@ class Engine {
         this.setupThings();
         //setup some variables we'll be using for gameover, pause and level functions
         this.currentLevel = 1;
-        this.enemiesInLevel = 40;
+        //change this to make first level longer
+        this.enemiesInLevel = 20;
         this.gameIsOver = false;
         this.gameIsPaused = false;
         // Setup the <canvas> element where we will be drawing
@@ -401,7 +402,8 @@ class Engine {
             this.ctx.font = '30px Impact';
 
             this.ctx.fillText(`Check out our Kickstarter!`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180);
-
+            this.ctx.fillText(`Signed, Bashu`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 225);
+            
         } else
             setTimeout(() => {
                 //makes the nextLevel button visible
@@ -480,7 +482,8 @@ class Engine {
         if (3 >= this.currentLevel && this.currentLevel >= 2) {
             catSpeedDivider -= 1
         }
-        this.enemiesInLevel = this.currentLevel * 20 + 20;
+        //change this to make successive levels harder
+        this.enemiesInLevel = this.currentLevel * 10 + 10 ;
         console.log("next level starting!")
         //hides the button
         document.getElementById('nextLevelButton').style.display = "none";
