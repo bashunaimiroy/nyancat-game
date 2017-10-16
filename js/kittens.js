@@ -252,6 +252,7 @@ class Engine {
         // Setup the <canvas> element where we will be drawing
 
         var canvas = document.createElement('canvas');
+        canvas.className = "gameScreen"
         canvas.width = GAME_WIDTH;
         canvas.height = GAME_HEIGHT;
         element.appendChild(canvas);

@@ -75,3 +75,10 @@ div{
     width: 94px;
     background-image:url(../images/nextLevel.png)
 }
+.gameScreen{
+    width:100%;
+}
+
+#app{
+    max-width:375px;
+}
