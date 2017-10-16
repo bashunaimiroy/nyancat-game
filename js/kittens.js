@@ -261,13 +261,14 @@ class Engine {
             // evt.preventDefault();
             var touch = evt.touches["0"];
             //playerxpos is the center of the hamburger
-            var playerXpos = this.player.x + PLAYER_WIDTH / 2
             //if the touch is left of playerXpos, move left. If right, move right.
-            if(this.gameIsStarting){
+            if(this.gameIsStarting==true){
                 this.gameIsStarting=false;
                 this.start();
             }
             else{
+                var playerXpos = this.player.x + PLAYER_WIDTH / 2
+                
             if (playerXpos > touch.pageX) {
                 this.player.move(MOVE_LEFT);
             } else if (playerXpos < touch.pageX) {
