@@ -73,9 +73,9 @@ class Entity {
     }
 }
 class Background {
-    constructor(imageFile){
-    this.image = images[`${imageFile}.png`];
-    this.frameIndex = 0;
+    constructor(imageFile) {
+        this.image = images[`${imageFile}.png`];
+        this.frameIndex = 0;
     }
 
     render(ctx) {
@@ -83,14 +83,16 @@ class Background {
             GAME_HEIGHT - this.frameIndex, GAME_WIDTH,
             GAME_HEIGHT, 0, 0, GAME_WIDTH, GAME_HEIGHT)
     }
-    update(timeDiff){
-            this.frameIndex += timeDiff
-            if(this.frameIndex>=500){
-                this.frameIndex=0
-            }
-    
+    update(timeDiff) {
+
+
+        this.frameIndex += timeDiff / 4
+        if (this.frameIndex >= 500) {
+            this.frameIndex = 0
         }
+
     }
+}
 
 
 
@@ -253,8 +255,26 @@ class Engine {
         canvas.width = GAME_WIDTH;
         canvas.height = GAME_HEIGHT;
         element.appendChild(canvas);
+        //starts listening for touches on the user's touchscreen
+        document.addEventListener("touchstart", evt => {
+            // evt.preventDefault();
+            var touch = evt.touches["0"];
+            //playerxpos is the center of the hamburger
+            var playerXpos = this.player.x + PLAYER_WIDTH / 2
+            //if the touch is left of playerXpos, move left. If right, move right.
+            if (playerXpos > touch.pageX) {
+                this.player.move(MOVE_LEFT);
+            } else if (playerXpos < touch.pageX) {
+                this.player.move(MOVE_RIGHT);
+
+            }
+            //just logs the touch x y coordinates. you can delete this.
+            console.log(`touched at ${touch.pageX},${touch.pageY}`);
+        })
+        //starts listening for key presses from the user's keyboard
         document.addEventListener('keydown', e => {
             if (e.keyCode === LEFT_ARROW_CODE) {
+                console.log(this)
                 this.player.move(MOVE_LEFT);
             } else if (e.keyCode === RIGHT_ARROW_CODE) {
                 this.player.move(MOVE_RIGHT);
@@ -285,57 +305,34 @@ class Engine {
             //     }
             // }
 
-        })
+        });
         this.ctx = canvas.getContext('2d');
 
         // Since gameLoop will be called out of context, bind it once here.
         this.gameLoop = this.gameLoop.bind(this);
     }
+    //this gets called whenever someone touches the screen,
+    //it compares the player X position and the touch's X position
+    //and moves the player accordingly
+    detectTouchStart(evt) {
+        evt.preventDefault();
+        var touchX = evt.touches["0"].pageX
+        console.log(this);
+        if (this.player.x > touchX) {
+            this.player.move(MOVE_LEFT);
+        } else if (this.player.x < touchX) {
+            this.player.move(MOVE_RIGHT);
 
-    /*
-     The game allows for 5 horizontal slots where a cat or coin can be present.
-     At any point in time there can be at most ${MAX} things 
-     This sets up the catsAndCoins array, as well as the popUps array.*/
-
-    setupThings() {
-        if (!this.catsAndCoins) {
-            this.catsAndCoins = [];
         }
-        if (!this.popUps) {
-            this.popUps = [];
-        }
-
-        while (this.catsAndCoins.filter(e => !!e).length < MAX_catsAndCoins) {
-            this.addSomething();
-        }
-    }
-
-    // This method finds a random spot where there is no thing, and puts a coin or a cat in there
-    addSomething() {
-        var lanes = GAME_WIDTH / ENEMY_WIDTH; //5
-
-        var lane;
-        // Keep looping until we find a free enemy spot at random. If lane doesn't exist (at beginning of game)
-        //or if the catsAndCoins array has something at the current lane index, make a new lane number
-        //between 1 and 5 (?)
-        while (lane === undefined || this.catsAndCoins[lane]) {
-
-            lane = Math.floor(Math.random() * lanes);
-        }
-        //this makes a random number 0 to 1, creates an enemy if it's more than 0.2 and a coin otherwise.
-        //so there's a 1 in 5 possibility of generating a coin.
-        var foo = Math.random();
-        foo > 0.2 ?
-            (this.catsAndCoins[lane] = new Enemy(lane * ENEMY_WIDTH)) :
-            (this.catsAndCoins[lane] = new Coin(lane * ENEMY_WIDTH))
-
-
+        console.log(`touchstart at ${evt.changedTouches[1].pageX},${evt.pageY}`);
     }
     // This is the opening screen. It does not work, I'll figure it out
     startScreen() {
         console.log("yep we're starting!")
-        this.gameIsStarting = true;
-        this.ctx.drawImage(images['stars.png'], 0, 0); 
+        // this.gameIsStarting = true;
+        this.ctx.fillStyle = "bold 40px impact"
+        this.ctx.fillText = "HEY HEY HEY"
+        // this.ctx.drawImage(images['stars.png'], 0, 0); 
         // draw the star bg
         console.log("just drew the background! oowee!")
 
@@ -403,7 +400,7 @@ class Engine {
 
             this.ctx.fillText(`Check out our Kickstarter!`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180);
             this.ctx.fillText(`Signed, Bashu`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 225);
-            
+
         } else
             setTimeout(() => {
                 //makes the nextLevel button visible
@@ -483,7 +480,7 @@ class Engine {
             catSpeedDivider -= 1
         }
         //change this to make successive levels harder
-        this.enemiesInLevel = this.currentLevel * 10 + 10 ;
+        this.enemiesInLevel = this.currentLevel * 10 + 10;
         console.log("next level starting!")
         //hides the button
         document.getElementById('nextLevelButton').style.display = "none";
@@ -540,6 +537,46 @@ class Engine {
         MAX_catsAndCoins = 3;
         catSpeedDivider = 4;
         this.start();
+
+    }
+
+    /*
+     The game allows for 5 horizontal slots where a cat or coin can be present.
+     At any point in time there can be at most ${MAX} things 
+     This sets up the catsAndCoins array, as well as the popUps array.*/
+
+    setupThings() {
+        if (!this.catsAndCoins) {
+            this.catsAndCoins = [];
+        }
+        if (!this.popUps) {
+            this.popUps = [];
+        }
+
+        while (this.catsAndCoins.filter(e => !!e).length < MAX_catsAndCoins) {
+            this.addSomething();
+        }
+    }
+
+    // This method finds a random spot where there is no thing, and puts a coin or a cat in there
+    addSomething() {
+        var lanes = GAME_WIDTH / ENEMY_WIDTH; //5
+
+        var lane;
+        // Keep looping until we find a free enemy spot at random. If lane doesn't exist (at beginning of game)
+        //or if the catsAndCoins array has something at the current lane index, make a new lane number
+        //between 1 and 5 (?)
+        while (lane === undefined || this.catsAndCoins[lane]) {
+
+            lane = Math.floor(Math.random() * lanes);
+        }
+        //this makes a random number 0 to 1, creates an enemy if it's more than 0.2 and a coin otherwise.
+        //so there's a 1 in 5 possibility of generating a coin.
+        var foo = Math.random();
+        foo > 0.2 ?
+            (this.catsAndCoins[lane] = new Enemy(lane * ENEMY_WIDTH)) :
+            (this.catsAndCoins[lane] = new Coin(lane * ENEMY_WIDTH))
+
 
     }
     /*
