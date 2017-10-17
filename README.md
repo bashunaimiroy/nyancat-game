@@ -5,9 +5,9 @@
 
 This is a game I'm working on in Oct 2017 for a Javascript module of my Web Developer bootcamp. I'm learning how to push to a remote repository as well, by doing this and writing this document. Original game by Ziad Saab at DecodeMTL.
 
-Friday October 13 2017 changes:
+changes made:
 * there are coins which add 10000 points to your score when you hit them.
-* the cats' exhaust and tail do not kill you //DONE
+* the cats' exhaust and tail do not kill you
 * whenever an enemy's speed is greater than 0.5, they receive a special Skullcat sprite (no other special properties)
 * animate the enemies and the falling coins with a spritesheet
 * added a soundtrack and sound effects
@@ -19,13 +19,14 @@ Friday October 13 2017 changes:
  
 
 to do:
-* add another level with harder difficulty?
 * add more visual effects
+* bug: Player can keep pressing F to progress to next level without levelEnd screen
 * make a separate subclass of Enemy called SkullCat, with special properties. Maybe they'll take away all your lives at once.
-* out of curiosity: Figure out why changing the || operator to an && operator in the enemy placing function will make the game jump.
-* add lasers like Mike's
-* add different kinds of weapons
-
+* add lasers and other weapons
+* add a more extensive starting menu
+* add alerts to notify player of progress("only 10 enemies remaining in level")
+* add extra lives
+* add graphic to lives remaining display
 
 ------------
 
